@@ -1,1 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vape Shop — Premium</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 
+<!-- Modal: delivery & payment -->
+<div id="deliveryModal" class="modal hidden">
+  <div class="modal-content">
+    <h3 data-i18n="deliveryPayment">Доставка и оплата</h3>
+
+    <div class="option-group">
+      <p class="muted" data-i18n="delivery">Способ доставки</p>
+
+<label>
+  <input type="radio" name="delivery" value="pickup_prazska">
+  <span data-i18n="pickup_prazska"></span>
+</label>
+
+<label>
+  <input type="radio" name="delivery" value="pickup_aupark">
+  <span data-i18n="pickup_aupark"></span>
+</label>
+
+<label>
+  <input type="radio" name="delivery" value="pickup_tuke">
+  <span data-i18n="pickup_tuke"></span>
+</label>
+
+    </div>
+
+    <div class="option-group">
+      <p class="muted" data-i18n="payment">Способ оплаты</p>
+
+<label>
+  <input type="radio" name="payment" value="ua_card">
+  <span data-i18n="pay_ua_card"></span>
+</label>
+<label>
+  <input type="radio" name="payment" value="tatra">
+  <span data-i18n="pay_tatra"></span>
+</label>
+<label>
+  <input type="radio" name="payment" value="cash">
+  <span data-i18n="pay_cash"></span>
+</label>
+<label>
+  <input type="radio" name="payment" value="usdt">
+  <span data-i18n="pay_usdt"></span>
+</label>
+
+      <!-- Сдача (только для наличных) -->
+<div class="option-group hidden" id="cashChangeBlock">
+  <p class="muted" data-i18n="cashChange"></p>
+
+  <label class="radio-row">
+    <input type="radio" name="cash_change" value="no_change">
+    <span data-i18n="cashNoChange"></span>
+  </label>
+
+  <label class="radio-row">
+    <input type="radio" name="cash_change" value="from_sum">
+    <span data-i18n="cashFromSum"></span>
+  </label>
+
+  <input
+    type="number"
+    id="cashFromInput"
+    class="input hidden"
+    min="0"
+    step="1"
+    placeholder="Например: 15 €"
+  />
+</div>
+
+    </div>
+
+    <div class="modal-actions">
+        <button class="btn btn-primary" onclick="confirmDelivery()" data-i18n="continue">
+          Продолжить
+        </button>
+      <button class="btn btn-outline" onclick="closeDeliveryModal()" data-i18n="close">
+        Отмена
+      </button>
+    </div>
+    <div id="deliveryError" class="modal-error hidden">
+      Пожалуйста, выберите способ доставки и оплаты
+    </div>
+  </div>
+</div>
+
+<div id="orderModal" class="order-modal hidden">
+  <div class="order-card">
+    <div class="order-header">
+      <div class="order-title" data-i18n="orderTitle">🧾 Ваш заказ</div>
+      <button class="order-close" onclick="closeOrderModal()">✕</button>
+    </div>
+
+    <div class="order-meta">
+      <span id="orderNumberLabel"></span>
+    </div>
+
+    <textarea id="orderText" readonly></textarea>
+
+    <div class="order-actions">
+      <button class="btn btn-primary" onclick="copyAndOpenTelegram()" data-i18n="copyOrder">
+        📋 Скопировать и открыть Telegram
+      </button>
+      <button class="btn btn-outline" onclick="closeOrderModal()" data-i18n="close">
+        Закрыть
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<header id="header">
+  <div class="menu-btn" id="menuBtn" onclick="toggleMenu()">☰</div>
+  <div class="title">VAPORS KE</div>
+  <div class="header-actions">
+    <div class="lang-currency">
+      <select id="langSelect" onchange="setLang(this.value)">
+        <option value="ru" selected>RU</option>
+        <option value="ua">UA</option>
+        <option value="en">EN</option>
+      </select>
+      <select id="currencySelect" onchange="setCurrency(this.value)">
+        <option value="EUR" selected>€</option>
+        <option value="UAH">₴</option>
+      </select>
+    </div>
+    <div class="cart-btn" id="cartBtn" onclick="openCart()">
+      <svg class="cart-icon" viewBox="0 0 24 24">
+        <path d="M7 4h-2l-1 2h2l3.6 7.6-1.35 2.45c-.16.28-.25.61-.25.95a2 2 0 0 0 2 2h12v-2h-11.42a.25.25 0 0 1-.25-.25l.03-.12.9-1.63h7.19a2 2 0 0 0 1.8-1.1l3.58-6.49a1 1 0 0 0-.9-1.48h-16.3l-.94-2z"/>
+      </svg>
+
+      <span class="cart-count" id="cartCount">0</span>
+    </div>
+  </div>
+</header>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="showFavorites()" data-i18n="favorites">Избранное 🩷</button>
+  <div class="sidebar-bottom">
+    <button class="sidebar-about-btn" onclick="openAbout()" data-i18n="aboutBtn">
+      О нас
+    </button>
+  </div>
+</div>
+
+<main id="mainPage" class="page">
+  <div class="promo-banner">
+    <img src="images/banner.png" alt="Promo banner">
+  </div>
+  
+<div class="category-panel">
+  <div class="categories">
+    <button class="category-btn active" data-category="all" data-i18n="allProducts">Все товары</button>
+    <button class="category-btn" data-category="liquid" data-i18n="liquid">Жидкости</button>
+    <button class="category-btn" data-category="disposable" data-i18n="disposable">Одноразки</button>
+    <button class="category-btn" data-category="cartridge" data-i18n="cartridge">Картриджи</button>
+  </div>
+
+  <div class="brands" id="brandFilter" style="display:none;">
+    <button class="brand-btn" data-brand="fp">Chaser F/P</button>
+    <button class="brand-btn" data-brand="black">Chaser Black</button>
+    <button class="brand-btn" data-brand="mymint">Chaser My Mint</button>
+    <button class="brand-btn" data-brand="elf">Elf Liq</button>
+  </div>
+</div>
+
+  <div class="products" id="productList"></div>
+</main>
+
+<section id="cartPage" class="cart-page hidden">
+  <div class="cart-header">
+    <div class="back-btn" onclick="closeCart()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="15" y1="6" x2="9" y2="12"/>
+        <line x1="15" y1="18" x2="9" y2="12"/>
+      </svg>
+    </div>
+    <h3 data-i18n="cart">Корзина</h3>
+  </div>
+  <div id="cartItems"></div>
+  <div id="cartTotal" class="cart-total"></div>
+
+  <div class="checkout-panel">
+    <button class="checkout-btn" onclick="checkout()" data-i18n="checkout">
+      Оформить заказ
+    </button>
+    <a class="admin-btn" id="adminBtn" target="_blank" data-i18n="contactAdmin">
+      Написать админу
+    </a>
+  </div>
+
+</section>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/app.js"></script>
+
+<div id="aboutModal" class="modal hidden">
+  <div class="modal-content about-card">
+
+    <div class="about-header">
+      <div class="about-icon">ℹ️</div>
+      <h3 data-i18n="aboutTitle"></h3>
+
+      <button class="modal-close" onclick="closeAbout()">×</button>
+    </div>
+
+    <!-- Telegram каналы -->
+<div class="about-section">
+  <div class="about-links">
+    <a href="https://t.me/VaporsPresov2"
+       target="_blank"
+       class="about-link">
+      <b>Telegram Košice</b>
+    </a>
+
+    <a href="https://t.me/VaporsPresov2"
+       target="_blank"
+       class="about-link">
+      <b>Telegram Prešov</b>
+    </a>
+  </div>
+</div>
+
+    <!-- Самовывоз -->
+    <div class="about-section">
+      <div class="about-row">
+        <span class="about-emoji">📍</span>
+        <span data-i18n="aboutLocation"></span>
+      </div>
+    </div>
+
+    <!-- Доставка -->
+    <div class="about-section">
+      <div class="about-row">
+        <span class="about-emoji">🚚</span>
+        <span data-i18n="aboutDelivery"></span>
+      </div>
+    </div>
+
+    <!-- Оплата -->
+    <div class="about-section">
+      <div class="about-row">
+        <span class="about-emoji">💳</span>
+        <span data-i18n="aboutPayment"></span>
+      </div>
+    </div>
+
+    <!-- Переходник -->
+    <div class="about-section about-note">
+      <span data-i18n="aboutNote"></span>
+      <a href="https://t.me/+vzY2q9IU1BZiM2I0"
+         target="_blank"
+         class="about-link adapter-link"
+         data-i18n="aboutAdapter">
+      </a>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
