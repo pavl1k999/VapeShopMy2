@@ -5,7 +5,7 @@ const ADMIN_URL = `https://t.me/${ADMIN_NICK}`;
 // Currency and language (updated rates)
 const currencyRates = {
   EUR: 1,     // база
-  UAH: 50     // примерный курс грн к евро (можешь поменять)
+  UAH: 51     // примерный курс грн к евро (можешь поменять)
 };
 
 const currencySymbols = {
@@ -218,25 +218,12 @@ const discounts = {
 
 // Products (base prices in PLN)
 const products = [
-  // Elf Liq
-  ...[
-    'Apple Peach','Blackcurrant aniseed','Blueberry',
-    'Cherry','Double Apple','Kiwi Passion Fruit Guava',
-    'Lemon Lime','Strawberry Ice','Pineapple Ice','P&B Cloud'
-  ].map((n,i)=>({
-    id: i+1,
-    name: `Elf Liq – ${n}`,
-    brand: 'elf',
-    price: discounts.elf.old,
-    category: 'liquid',
-    img: `images/elf/${n.replace(/[^a-zA-Z0-9]/g,'_')}.png` // уникальная картинка по названию
-  })),
-
-  // Chaser
 
   // Chaser F/P
   ...[ 
-    'Blue Raspberry','Cherry','Pomegranate','Watermelon Menthol','Sweet Cherry (Черешня)','Berries' 
+    'Blue Raspberry','Cherry Menthol','Currant Menthol',
+    'Watermelon Menthol','Mint','Blueberry Menthol',
+    'Apple Mint'
   ].map((n,i)=>({
     id: 100+i,
     name: `Chaser – ${n}`,
@@ -249,7 +236,7 @@ const products = [
 
 // Chaser Black
   ...[ 
-    'Grape Blackberry','Triple Berry','Wild Strawberry Mint' 
+    'Blueberry Lemon','Triple Berry','Energy Grape','Forest Mix'
   ].map((n,i)=>({
     id: 200+i,
     name: `Chaser – ${n}`,
@@ -260,8 +247,25 @@ const products = [
     img: `images/chaser/${n.replace(/[^a-zA-Z0-9]/g,'_')}.png`
   })),
 
+    // Elf Liq
+  ...[
+    'Blue razz Ice','Strawberry Snoow','Peach Ice',
+    'Lemon Lime','Strawberry Ice','Pineapple Ice','P&B Cloud',
+    'Strawberry raspberry cherry ice','Elf Jack','Blackberry lemon',
+    'Apple Peach','Blackcurrant aniseed','Blueberry',
+    'Cherry','Double Apple','Kiwi Passion Fruit Guava',
+    'Sour Watermelon Gummy','Blueberry sour raspberry','Jasmine Raspberry'
+  ].map((n,i)=>({
+    id: i+1,
+    name: `Elf Liq – ${n}`,
+    brand: 'elf',
+    price: discounts.elf.old,
+    category: 'liquid',
+    img: `images/elf/${n.replace(/[^a-zA-Z0-9]/g,'_')}.png` // уникальная картинка по названию
+  })),
+
 // Chaser My Mint
-  ...[ 'PepperMint' ].map((n,i)=>({
+  /*...[ 'PepperMint' ].map((n,i)=>({
     id: 300+i,
     name: `Chaser – ${n}`,
     brand: 'chaser',
@@ -269,7 +273,7 @@ const products = [
     price: discounts.chaser.old,
     category: 'liquid',
     img: `images/chaser/${n.replace(/[^a-zA-Z0-9]/g,'_')}.png`
-  })),
+  })),*/
 
   // Cartridge
   /*{
@@ -287,6 +291,8 @@ const products = [
 let cart = [];
 let favorites = [];
 let showingFavorites = false;
+let promoActive = false;
+let promoPercent = 20;
 
 // Elements
 const mainPage = document.getElementById('mainPage');
@@ -420,9 +426,10 @@ function renderCart(){
     totalBox.textContent = '';
     return;
   }
-  let totalPLN=0;
+  let totalPLN = 0;
   cart.forEach((p,i)=>{
-    totalPLN+=p.price*p.qty;
+    totalPLN += p.price * p.qty;
+  
     box.innerHTML+=`
       <div class="cart-item">
         <img src="${p.img}" alt="${p.name}">
@@ -438,7 +445,16 @@ function renderCart(){
         </div>
       </div>`;
   });
-  totalBox.textContent = `${i18n[lang].total}: ${formatPricePLN(totalPLN)}`;
+
+  let finalTotal = promoActive
+  ? Math.round(totalPLN * 0.8)
+  : totalPLN;
+  
+  totalBox.innerHTML = `
+  ${i18n[lang].total}: ${formatPricePLN(finalTotal)}
+  ${promoActive ? `<div class="promo-active">🎉 Промокод активований −20%</div>` : ''}
+`;
+
 }
 
 // Interactions
@@ -582,12 +598,21 @@ function closeOrderModal(){
 async function copyAndOpenTelegram(){
   try{
     await navigator.clipboard.writeText(lastOrderText);
+
+    if (promoActive && window.Telegram?.WebApp) {
+      Telegram.WebApp.sendData(JSON.stringify({
+        action: "use_promo"
+      }));
+      promoActive = false;
+    }
+
     showToast(lang==='ua'?'Скопійовано':'Скопировано');
     window.open(ADMIN_URL,'_blank');
   }catch{
     showToast('Ошибка копирования');
   }
 }
+
 
 function sendOrderTelegram(){
   // Откроем чат с админом; пользователь отправит ему скопированный текст
@@ -666,7 +691,11 @@ function confirmDelivery() {
   lastOrderDelivery = deliveryEl.value;
   lastOrderPayment  = paymentEl.value;
 
-  const orderTotal = cart.reduce((s, p) => s + p.price * p.qty, 0);
+  let orderTotal = cart.reduce((s, p) => s + p.price * p.qty, 0);
+
+  if (promoActive) {
+    orderTotal = Math.round(orderTotal * 0.8);
+  }
 
   if (lastOrderPayment === 'cash') {
     if (!cashChangeType) {
@@ -694,7 +723,16 @@ function confirmDelivery() {
 
 function showOrderModal(){
   const orderId = Date.now().toString().slice(-6);
-  const total = cart.reduce((s,p)=>s + p.price*p.qty,0);
+  let itemsTotal = cart.reduce((s,p)=>s + p.price*p.qty, 0);
+
+  if (promoActive) {
+    itemsTotal = Math.round(itemsTotal * 0.8);
+  }
+  
+  const total = lastOrderDelivery === 'pickup_aupark'
+    ? itemsTotal + 1
+    : itemsTotal;
+
 
   const lines = cart.map(p =>
     `• ${p.name} × ${p.qty} — ${formatPricePLN(p.price*p.qty)}`
@@ -702,27 +740,26 @@ function showOrderModal(){
 
   // Получаем текст доставки и оплаты из словаря i18n
   const deliveryText = i18n[lang][lastOrderDelivery] || lastOrderDelivery;
-  lastOrderPayment = paymentEl.value; // 'cash', 'tatra', 'ua_card', 'usdt'
-  const paymentText  = i18n[lang]['pay_' + lastOrderPayment]  || lastOrderPayment;
+  const paymentText  = i18n[lang][lastOrderPayment]  || lastOrderPayment;
 
   lastOrderText =
-  `${i18n[lang].orderNumber}: #${orderId}
-  👨‍💼 ${i18n[lang].consultant}: @${ADMIN_NICK}
+`${i18n[lang].orderNumber}: #${orderId}
+👨‍💼 ${i18n[lang].consultant}: @${ADMIN_NICK}
 
-  ${i18n[lang].deliveryLabel}: ${deliveryText}
-  ${i18n[lang].paymentLabel}: ${paymentText}
-  ${lastOrderCashText ? '💶 ' + lastOrderCashText : ''}
+${i18n[lang].deliveryLabel}: ${deliveryText}
+${i18n[lang].paymentLabel}: ${paymentText}
+${lastOrderCashText ? '💶 ' + lastOrderCashText : ''}
 
-  ${lines.join('\n')}
+${lines.join('\n')}
 
-  💰 ${i18n[lang].total}: ${formatPricePLN(total)}`;
+💰 ${i18n[lang].total}: ${formatPricePLN(total)}`;
 
   document.getElementById('orderText').value = lastOrderText;
-    document.getElementById('orderNumberLabel').textContent =
-      `${i18n[lang].orderNumber}: #${orderId}`;
+  document.getElementById('orderNumberLabel').textContent =
+    `${i18n[lang].orderNumber}: #${orderId}`;
 
-    document.getElementById('orderModal').classList.remove('hidden');
-  }
+  document.getElementById('orderModal').classList.remove('hidden');
+}
 
 // Показываем/скрываем блок сдачи при выборе способа оплаты
 document.querySelectorAll('input[name="payment"]').forEach(radio => {
@@ -764,8 +801,35 @@ document.getElementById('cashFromInput').addEventListener('input', e => {
   cashFromAmount = parseFloat(e.target.value) || 0;
 });
 
+function requestPromoStatus() {
+  if (!window.Telegram?.WebApp) return;
+
+  Telegram.WebApp.sendData(JSON.stringify({
+    action: "check_promo"
+  }));
+}
+
+if (window.Telegram?.WebApp) {
+Telegram.WebApp.onEvent("web_app_data", (event) => {
+  const msg = event?.data;
+  if (!msg) return;
+
+  if (msg === "PROMO_ACTIVE") {
+    promoActive = true;
+    renderProducts();
+    renderCart();
+  }
+
+  if (msg === "PROMO_USED" || msg === "PROMO_NONE") {
+    promoActive = false;
+    renderProducts();
+    renderCart();
+  }
+});
+}
 
 window.addEventListener('load', ()=>{
+  requestPromoStatus();
   loadCart();
   loadFavorites();
 
@@ -786,4 +850,3 @@ window.addEventListener('load', ()=>{
 
   updateCartCount();
 });
-
