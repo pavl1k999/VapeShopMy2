@@ -210,7 +210,7 @@ let lang = localStorage.getItem('lang') || 'ua';
 
 const discounts = {
   elf: { old: 15, new: 12 },
-  vozol: { old: 15, new: 12 },
+  elfbar: { old: 32, new: 28 },
   chaser: { old: 15, new: 12 },
   cartridge: { old: 25, new: 20 }
 };
@@ -262,6 +262,21 @@ const products = [
     price: discounts.elf.old,
     category: 'liquid',
     img: `images/elf/${n.replace(/[^a-zA-Z0-9]/g,'_')}.png` // уникальная картинка по названию
+  })),
+
+      // Elf Bar
+  ...[
+    'Granny Cherry','Grapefruit Passion Guava','Kiwi Pineapple Peach',
+    'Raspberry Grapefruit Lemon','Pomegranate Burst','Sour Strawberry Dragonfruit',
+    'Cherry Pomegranate Pineapple','Lemon Lime','Pine Needles',
+    'Apple Kiwi Ice'
+  ].map((n,i)=>({
+    id: 300+i,
+    name: `Elf Bar 33000 – ${n}`,
+    brand: 'disposable',
+    price: discounts.elfbar.old,
+    category: 'disposable',
+    img: `images/elfbar/${n.replace(/[^a-zA-Z0-9]/g,'_')}.png` // уникальная картинка по названию
   })),
 
 // Chaser My Mint
