@@ -210,7 +210,7 @@ let lang = localStorage.getItem('lang') || 'ua';
 
 const discounts = {
   elf: { old: 15, new: 12 },
-  elfbar: { old: 32, new: 28 },
+  elfbar: { old: 28, new: 28 },
   chaser: { old: 15, new: 12 },
   cartridge: { old: 25, new: 20 }
 };
