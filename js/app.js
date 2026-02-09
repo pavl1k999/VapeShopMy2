@@ -747,11 +747,16 @@ function showOrderModal(){
   if (promoActive) {
     itemsTotal = Math.round(itemsTotal * 0.8);
   }
-  
-  const total = lastOrderDelivery === 'pickup_aupark'
-    ? itemsTotal + 1
-    : itemsTotal;
+  let deliveryPrice = 0;
 
+  if (lastOrderDelivery === 'delivery_presov') {
+    deliveryPrice = 3.5;
+  }
+  if (lastOrderDelivery === 'delivery_slovakia') {
+    deliveryPrice = 2.5;
+  }
+// delivery_europe — договорная, цену не прибавляем
+  const total = itemsTotal + deliveryPrice;
 
   const lines = cart.map(p =>
     `• ${p.name} × ${p.qty} — ${formatPricePLN(p.price*p.qty)}`
