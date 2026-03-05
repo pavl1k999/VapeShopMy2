@@ -218,6 +218,22 @@ const discounts = {
   cartridge: { old: 25, new: 20 }
 };
 
+const outOfStockNames = [
+  // Chaser F/P
+  'Chaser – Blue Raspberry',
+  'Chaser – Cherry Menthol',
+  'Chaser – Currant Menthol',
+  'Chaser – Watermelon Menthol',
+  'Chaser – Mint',
+  'Chaser – Blueberry Menthol',
+  'Chaser – Apple Mint',
+
+  // Chaser Black
+  'Chaser – Blueberry Lemon',
+  'Chaser – Triple Berry',
+  'Chaser – Energy Grape',
+  'Chaser – Forest Mix'
+];
 
 // Products (base prices in PLN)
 const products = [
@@ -301,6 +317,10 @@ const products = [
 }*/
 
 ];
+
+products.forEach(product => {
+  product.inStock = !outOfStockNames.includes(product.name);
+});
 
 // State
 let cart = [];
@@ -395,9 +415,17 @@ function renderProducts() {
         </div>
 
         <div class="actions">
-          <button class="btn btn-primary" onclick="addToCart(${p.id}, this)">
-            ${i18n[lang].addToCart}
-          </button>
+${!p.inStock ? `
+  <button class="btn btn-disabled" disabled>
+    ${lang === 'ua' ? 'Немає в наявності' :
+      lang === 'ru' ? 'Нет в наличии' :
+      'Out of stock'}
+  </button>
+` : `
+  <button class="btn btn-primary" onclick="addToCart(${p.id}, this)">
+    ${i18n[lang].addToCart}
+  </button>
+`}
           <button class="btn btn-outline ${favActive ? 'active' : ''}" onclick="toggleFavorite(${p.id})">
             ${favActive ? '🩷' : '🤍'}
           </button>
@@ -429,6 +457,11 @@ function getFilteredProducts() {
     list = list.filter(p => favorites.includes(p.id));
   }
 
+  list.sort((a, b) => {
+  if (a.inStock === b.inStock) return 0;
+  return a.inStock ? -1 : 1;
+});
+  
   return list;
 }
 
