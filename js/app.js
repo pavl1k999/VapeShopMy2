@@ -242,7 +242,7 @@ const products = [
   ...[ 
     'Blue Raspberry','Cherry Menthol','Currant Menthol',
     'Watermelon Menthol','Mint','Blueberry Menthol',
-    'Apple Mint'
+    'Apple Mint','Lemon'
   ].map((n,i)=>({
     id: 100+i,
     name: `Chaser – ${n}`,
