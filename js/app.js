@@ -212,8 +212,8 @@ const i18n = {
 let lang = localStorage.getItem('lang') || 'ua';
 
 const discounts = {
-  elf: { old: 15, new: 14 },
-  elfbar: { old: 26, new: 26 },
+  elf: { old: 15, new: 13 },
+  elfbar: { old: 24, new: 24 },
   chaser: { old: 15, new: 14 },
   cartridge: { old: 25, new: 20 }
 };
