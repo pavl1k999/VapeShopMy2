@@ -338,8 +338,8 @@ function calcBulkDiscount() {
   });
   let discount = 0;
   Object.values(qtys).forEach(qty => {
-    if (qty >= 3) discount += 2;
-    else if (qty >= 2) discount += 1;
+    if (qty === 2) discount += 2;        // 2 шт → −2€
+    else if (qty >= 3) discount += qty * 2; // 3шт→−6, 4шт→−8, 5шт→−10...
   });
   return discount;
 }
