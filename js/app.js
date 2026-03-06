@@ -329,6 +329,21 @@ let showingFavorites = false;
 let promoActive = false;
 let promoPercent = 20;
 
+function calcBulkDiscount() {
+  const qtys = { liquid: 0, disposable: 0 };
+  cart.forEach(p => {
+    const base = products.find(b => b.id === p.id);
+    if (!base) return;
+    if (base.category in qtys) qtys[base.category] += p.qty;
+  });
+  let discount = 0;
+  Object.values(qtys).forEach(qty => {
+    if (qty >= 3) discount += 2;
+    else if (qty >= 2) discount += 1;
+  });
+  return discount;
+}
+
 // Elements
 const mainPage = document.getElementById('mainPage');
 const cartPage = document.getElementById('cartPage');
@@ -494,13 +509,14 @@ function renderCart(){
       </div>`;
   });
 
-  let finalTotal = promoActive
-  ? Math.round(totalPLN * 0.8)
-  : totalPLN;
-  
+  const bulkDiscount = calcBulkDiscount();
+  let finalTotal = promoActive ? Math.round(totalPLN * 0.8) : totalPLN;
+  finalTotal = Math.max(0, finalTotal - bulkDiscount);
+
   totalBox.innerHTML = `
   ${i18n[lang].total}: ${formatPricePLN(finalTotal)}
   ${promoActive ? `<div class="promo-active">🎉 Промокод активований −20%</div>` : ''}
+  ${bulkDiscount > 0 ? `<div class="promo-active">${lang==='ua'?'Знижка за кількість':lang==='ru'?'Скидка за количество':'Bulk discount'}: −${bulkDiscount.toFixed(1)} €</div>` : ''}
 `;
 
 }
@@ -772,20 +788,16 @@ function confirmDelivery() {
 function showOrderModal(){
   const orderId = Date.now().toString().slice(-6);
   let itemsTotal = cart.reduce((s,p)=>s + p.price*p.qty, 0);
-
-  if (promoActive) {
-    itemsTotal = Math.round(itemsTotal * 0.8);
-  }
+  const bulkDisc = calcBulkDiscount();
+  itemsTotal = Math.max(0, itemsTotal - bulkDisc);
+  if (promoActive) { itemsTotal = Math.round(itemsTotal * 0.8); }
   let deliveryPrice = 0;
-
-  if (lastOrderDelivery === 'delivery_presov') {
-    deliveryPrice = 3.5;
-  }
-  if (lastOrderDelivery === 'delivery_slovakia') {
-    deliveryPrice = 2.5;
-  }
-// delivery_europe — договорная, цену не прибавляем
+  if (lastOrderDelivery === 'delivery_presov') deliveryPrice = 3.5;
+  if (lastOrderDelivery === 'delivery_slovakia') deliveryPrice = 2.5;
   const total = itemsTotal + deliveryPrice;
+  const bulkDiscLine = bulkDisc > 0
+    ? `\n🎁 ${lang==='ua'?'Знижка за кількість':lang==='ru'?'Скидка за количество':'Bulk discount'}: −${bulkDisc.toFixed(1)} €`
+    : '';
 
   const lines = cart.map(p =>
     `• ${p.name} × ${p.qty} — ${formatPricePLN(p.price*p.qty)}`
@@ -800,7 +812,7 @@ function showOrderModal(){
 👨‍💼 ${i18n[lang].consultant}: @${ADMIN_NICK}
 
 ${i18n[lang].deliveryLabel}: ${deliveryText}
-${i18n[lang].paymentLabel}: ${paymentText}
+${i18n[lang].paymentLabel}: ${paymentText}${bulkDiscLine}
 ${lastOrderCashText ? '💶 ' + lastOrderCashText : ''}
 
 ${lines.join('\n')}
